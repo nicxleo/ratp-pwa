@@ -11,7 +11,6 @@
         addDialog: document.querySelector('.dialog-container')
     };
 
-
     /*****************************************************************************
      *
      * Event listeners for UI elements
@@ -29,8 +28,6 @@
     });
 
     document.getElementById('butAddCity').addEventListener('click', function () {
-
-
         var select = document.getElementById('selectTimetableToAdd');
         var selected = select.options[select.selectedIndex];
         var key = selected.value;
@@ -39,7 +36,7 @@
             app.selectedTimetables = [];
         }
         app.getSchedule(key, label);
-        app.selectedTimetables.push({key: key, label: label});
+        app.selectedTimetables.push({ key: key, label: label });
         app.toggleAddDialog(false);
     });
 
@@ -88,10 +85,10 @@
         card.querySelector('.card-last-updated').textContent = data.created;
 
         var scheduleUIs = card.querySelectorAll('.schedule');
-        for(var i = 0; i<4; i++) {
+        for (var i = 0; i < 4; i++) {
             var schedule = schedules[i];
             var scheduleUI = scheduleUIs[i];
-            if(schedule && scheduleUI) {
+            if (schedule && scheduleUI) {
                 scheduleUI.querySelector('.message').textContent = schedule.message;
             }
         }
@@ -109,30 +106,56 @@
      *
      ****************************************************************************/
 
-
     app.getSchedule = function (key, label) {
-        var url = 'https://api-ratp.pierre-grimaud.fr/v3/schedules/' + key;
+        var url = 'https://api-ratp.pierre-grimaud.fr/v4/schedules/' + key;
 
-        var request = new XMLHttpRequest();
-        request.onreadystatechange = function () {
-            if (request.readyState === XMLHttpRequest.DONE) {
-                if (request.status === 200) {
-                    var response = JSON.parse(request.response);
-                    var result = {};
-                    result.key = key;
-                    result.label = label;
-                    result.created = response._metadata.date;
-                    result.schedules = response.result.schedules;
-                    app.updateTimetableCard(result);
-                }
-            } else {
-                // Return the initial weather forecast since no data is available.
-                app.updateTimetableCard(initialStationTimetable);
+        getScheduleFromNetwork(url).then((response) => {
+            if (response) {
+                var result = {};
+                result.key = key;
+                result.label = label;
+                result.created = response._metadata.date;
+                result.schedules = response.result.schedules;
+                app.updateTimetableCard(result);
             }
-        };
-        request.open('GET', url);
-        request.send();
+        });
+        getScheduleFromCache(url).then((response) => {
+            if (response) {
+                var result = {};
+                result.key = key;
+                result.label = label;
+                result.created = response._metadata.date;
+                result.schedules = response.result.schedules;
+                app.updateTimetableCard(result);
+            }
+        });
     };
+
+    function getScheduleFromCache(url) {
+        // CODELAB: Add code to get weather forecast from the caches object.
+        if (!('caches' in window)) {
+            return null;
+        }
+        return caches.match(url).then((response) => {
+            if (response) {
+                return response.json();
+            }
+            return null;
+        }).catch((err) => {
+            console.error('Error getting data from cache', err);
+            return null;
+        });
+    }
+
+    function getScheduleFromNetwork(url) {
+        return fetch(url).then((response) => {
+            if (response.status === 200) {
+                return response.json();
+            }
+        }).catch((err) => {
+            return null;
+        });
+    }
 
     // Iterate all of the cards and attempt to get the latest timetable data
     app.updateSchedules = function () {
@@ -149,7 +172,6 @@
      */
 
     var initialStationTimetable = {
-
         key: 'metros/1/bastille/A',
         label: 'Bastille, Direction La Défense',
         created: '2017-07-18T17:08:42+02:00',
@@ -164,24 +186,10 @@
                 message: '5 mn'
             }
         ]
-
-
     };
-
-
-    /************************************************************************
-     *
-     * Code required to start the app
-     *
-     * NOTE: To simplify this codelab, we've used localStorage.
-     *   localStorage is a synchronous API and has serious performance
-     *   implications. It should not be used in production applications!
-     *   Instead, check out IDB (https://www.npmjs.com/package/idb) or
-     *   SimpleDB (https://gist.github.com/inexorabletash/c8069c042b734519680c)
-     ************************************************************************/
 
     app.getSchedule('metros/1/bastille/A', 'Bastille, Direction La Défense');
     app.selectedTimetables = [
-        {key: initialStationTimetable.key, label: initialStationTimetable.label}
+        { key: initialStationTimetable.key, label: initialStationTimetable.label }
     ];
 })();
