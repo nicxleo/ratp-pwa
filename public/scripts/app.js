@@ -94,7 +94,7 @@
         }
 
         if (app.isLoading) {
-            window.cardLoadTime = performance.now();
+            //window.cardLoadTime = performance.now();
             app.spinner.setAttribute('hidden', true);
             app.container.removeAttribute('hidden');
             app.isLoading = false;
@@ -151,6 +151,7 @@
     function getScheduleFromNetwork(url) {
         return fetch(url).then((response) => {
             if (response.status === 200) {
+                window.cardLoadTime = performance.now();
                 return response.json();
             }
         }).catch((err) => {
